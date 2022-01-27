@@ -1,36 +1,8 @@
+import { useState } from "react";
+import { useRouter } from "next/router";
 import { Box, Button, Text, TextField, Image } from "@skynexui/components";
-import appConfig from "../config.json";
 
-function GlobalStyle() {
-  return (
-    <style global jsx>{`
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        list-style: none;
-      }
-      body {
-        font-family: "Open Sans", sans-serif;
-      }
-      /* App fit Height */
-      html,
-      body,
-      #__next {
-        min-height: 100vh;
-        display: flex;
-        flex: 1;
-      }
-      #__next {
-        flex: 1;
-      }
-      #__next > * {
-        flex: 1;
-      }
-      /* ./App fit Height */
-    `}</style>
-  );
-}
+import appConfig from "../config.json";
 
 function Title(props) {
   const Tag = props.tag || "h1";
@@ -49,11 +21,13 @@ function Title(props) {
 }
 
 export default function PaginaInicial() {
-  const username = "KansasMyers";
+  const [userName, setUserName] = useState("");
+  const [realName, setRealName] = useState("");
+  const [existUser, setExistUser] = useState(false);
+  const router = useRouter();
 
   return (
     <>
-      <GlobalStyle />
       <Box
         styleSheet={{
           display: "flex",
@@ -88,6 +62,10 @@ export default function PaginaInicial() {
           {/* Formulário */}
           <Box
             as="form"
+            onSubmit={function (event) {
+              event.preventDefault();
+              router.push("/chat");
+            }}
             styleSheet={{
               display: "flex",
               flexDirection: "column",
@@ -110,6 +88,30 @@ export default function PaginaInicial() {
             </Text>
 
             <TextField
+              value={userName}
+              onChange={async function (event) {
+                const value = event.target.value;
+                setUserName(value);
+
+                await fetch(`https://api.github.com/users/${value}`).then(
+                  function (response) {
+                    if (response.ok) {
+                      response.json().then(function (user) {
+                        console.log("user", user);
+                        setRealName(user.name);
+                        setExistUser(true);
+                      });
+                    } else {
+                      console.log(
+                        "Usuário não existe na base de dados do github!"
+                      );
+                      setRealName("");
+                      setExistUser(false);
+                    }
+                  }
+                );
+              }}
+              placeholder="Digite seu usuário do Github"
               fullWidth
               textFieldColors={{
                 neutral: {
@@ -123,6 +125,7 @@ export default function PaginaInicial() {
             <Button
               type="submit"
               label="Entrar"
+              disabled={!existUser}
               fullWidth
               buttonColors={{
                 contrastColor: appConfig.theme.colors.neutrals["000"],
@@ -155,7 +158,7 @@ export default function PaginaInicial() {
                 borderRadius: "50%",
                 marginBottom: "16px",
               }}
-              src={`https://github.com/${username}.png`}
+              src={`https://github.com/${userName}.png`}
             />
             <Text
               variant="body4"
@@ -166,7 +169,18 @@ export default function PaginaInicial() {
                 borderRadius: "1000px",
               }}
             >
-              {username}
+              {`Usuário: ${userName}`}
+            </Text>
+            <Text
+              variant="body4"
+              styleSheet={{
+                color: appConfig.theme.colors.neutrals[200],
+                backgroundColor: appConfig.theme.colors.neutrals[900],
+                padding: "3px 10px",
+                borderRadius: "1000px",
+              }}
+            >
+              {`Nome Real: ${realName}`}
             </Text>
           </Box>
           {/* Photo Area */}
